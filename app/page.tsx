@@ -54,6 +54,13 @@ export default function Page() {
 
   return (
     <main style={styles.main}>
+      {/* ✅ 1) NAV goes here (inside main, before header) */}
+      <nav style={styles.nav}>
+        <a href="/pricing" style={styles.navLink}>Pricing</a>
+        <a href="/terms" style={styles.navLink}>Terms</a>
+        <a href="/refunds" style={styles.navLink}>Refunds</a>
+      </nav>
+
       <header style={styles.header}>
         <div>
           <h1 style={styles.h1}>FirstLine</h1>
@@ -118,6 +125,16 @@ export default function Page() {
         {error && <p style={styles.error}>{error}</p>}
       </section>
 
+      {/* ✅ 2) “WHAT YOU GET” goes here (after generator card, before results) */}
+      <section style={{ marginTop: 16, ...styles.card }}>
+        <h2 style={styles.h2}>What you get</h2>
+        <ul style={{ lineHeight: 1.8, margin: 0, paddingLeft: 18 }}>
+          <li><b>10 cold email opening sentences</b> per generation</li>
+          <li>Each line is <b>one sentence</b>, short and human-sounding</li>
+          <li>Built for founders, SDRs, recruiters, and freelancers</li>
+        </ul>
+      </section>
+
       {openers.length > 0 && (
         <section style={{ ...styles.card, marginTop: 16 }}>
           <h2 style={styles.h2}>Your openers</h2>
@@ -158,6 +175,17 @@ const styles: Record<string, React.CSSProperties> = {
     margin: "40px auto",
     padding: 16,
     fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+  },
+  nav: {
+    display: "flex",
+    gap: 16,
+    marginBottom: 18,
+    fontWeight: 800,
+  },
+  navLink: {
+    color: "#111",
+    textDecoration: "none",
+    borderBottom: "1px solid transparent",
   },
   header: {
     display: "flex",
@@ -238,5 +266,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   footer: { marginTop: 18, color: "#666", fontSize: 13 },
 };
+
 
 
