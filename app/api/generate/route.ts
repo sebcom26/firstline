@@ -6,12 +6,46 @@ const BodySchema = z.object({
   companyType: z.string().min(2).max(80),
   context: z.string().optional().default(""),
 });
+function detectLanguage(text: string): string {
+  const t = (text || "").trim();
 
-function buildPrompt(role: string, companyType: string, context: string) {
+  // Hebrew / Arabic (unicode ranges)
+  if (/[֐-׿]/.test(t)) return "Hebrew";
+  if (/[\u0600-\u06FF]/.test(t)) return "Arabic";
+
+  const lower = t.toLowerCase();
+
+  // Very lightweight keyword checks for common EU languages
+  const fr = ["levée", "fonds", "marketing", "directeur", "entreprise", "bonjour", "équipe", "croissance"];
+  const es = ["empresa", "director", "crecimiento", "hola", "equipo", "financiación", "marketing"];
+  const de = ["unternehmen", "leiter", "wachstum", "hallo", "team", "finanzierung", "marketing"];
+  const it = ["azienda", "direttore", "crescita", "ciao", "team", "finanziamento", "marketing"];
+  const pt = ["empresa", "diretor", "crescimento", "olá", "equipe", "financiamento", "marketing"];
+
+  const score = (arr: string[]) => arr.reduce((s, w) => (lower.includes(w) ? s + 1 : s), 0);
+
+  const scores = [
+    { lang: "French", s: score(fr) },
+    { lang: "Spanish", s: score(es) },
+    { lang: "German", s: score(de) },
+    { lang: "Italian", s: score(it) },
+    { lang: "Portuguese", s: score(pt) },
+  ].sort((a, b) => b.s - a.s);
+
+  if (scores[0].s >= 1) return scores[0].lang;
+
+  return "English";
+}
+
+function buildPrompt(role: string, companyType: string, context: string, outputLanguage: string) {
   return `
 You are an expert cold email copywriter.
 
 Generate 10 cold email opening sentences.
+
+Output language rule:
+- Write ALL openers in ${outputLanguage}.
+- Do not mix languages.
 
 Rules:
 - Each opener must be ONE sentence
@@ -19,7 +53,7 @@ Rules:
 - Natural, human, non-salesy
 - No buzzwords
 - No emojis
-- No questions like “Hope you’re well”
+- No “Hope you’re well”
 - No exclamation marks
 - No mentioning “I came across”
 - No pitching
@@ -33,6 +67,7 @@ Context: ${context || "No context"}
 Return only the 10 lines.
 `.trim();
 }
+
 
 export async function POST(req: Request) {
   try {
@@ -49,7 +84,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const prompt = buildPrompt(body.role, body.companyType, body.context);
+    const combined = `${body.role}\n${body.companyType}\n${body.context || ""}`;
+const outputLanguage = detectLanguage(combined);
+
+const prompt = buildPrompt(body.role, body.companyType, body.context, outputLanguage);
+
 
     const res = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
